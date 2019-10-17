@@ -1,8 +1,25 @@
-# ELK Versioning
+# ELK Versioning for sumo nonprd cluster
+## Table of Contents
+1. [Prerequisite](#1-prerequisite)
+2. [Upgrade elasticsearch 5.5.2 => 5.6](#2-upgrade-elasticsearch-from-version-552--56)
+3. [Upgrade elasticsearch 5.6 => 6.8.0](#3-upgrade-elasticsearch-from-version-56--680)
+4. [Upgrade elasticsearch 6.8.0 => 7.3.1](#4-upgrade-elasticsearch-from-version-680--731)
+5. [Upgrade Kibana 5.5.2 => 7.3.1](#5-kibana)
+6. [Enable cron at APP VM](#6-enable-cronjob-at-app-vm)
 
-## Prerequisite
+---
 
-### 1. Preparation
+## 1. Prerequisite
+
+### 1.1 Download ***elk_versioning_packages.tar.gz***
+### Inside elk_versioning_packages.tar.gz
+- docker-compose.yml //for elasticsearch x.x.x
+- docker-compose-kib-7_3.yml //for kibana 7.3.1
+- elasticsearch_config
+- kibana_config
+- elk_env //version control setting
+
+### 1.2 Preparation
 ```bash
 cd /local/elasticsearch
 tar xzvf elk_versioning_packages.tar.gz
@@ -15,52 +32,61 @@ cp -p elasticsearch_config/elasticsearch1/* /local/elasticsearch/elasticsearch1/
 cp -p elasticsearch_config/elasticsearch2/* /local/elasticsearch/elasticsearch2/config/
 ```
 
+### 1.3 Disable ingest node cronjob at APP VM
+```bash
+# DEV
+mv /var/spool/cron/crontabs/devadm /var/spool/cron/crontabs/devadm.disabled
 
+# SIT & UAT
+mv /var/spool/cron/crontabs/dockadm /var/spool/cron/crontabs/dockadm.disabled
+```
 
-### 2. Stop ELK Services (Elasticsearch 5.5.2, Kibana 5.5.2)
-
+### 1.4 Stop ELK Services (Elasticsearch 5.5.2, Kibana 5.5.2)
+```bash
+docker-compose-cluster down
+```
 ---
 
-## UPGRADE ELASTICSEARCH FROM VERSION 5.5.2 => 5.6
+## 2. UPGRADE ELASTICSEARCH FROM VERSION 5.5.2 => 5.6
 
-### 1. Backup data
+### 2.1 Backup data
 ```bash
 cp -r -p /local/elasticsearch/elasticsearch1/data /local/elasticsearch/elasticsearch1/data5_5.bak
 cp -r -p /local/elasticsearch/elasticsearch2/data /local/elasticsearch/elasticsearch2/data5_5.bak
 ```
 
-### 2. Declare elasticsearch environment
+### 2.2 Declare elasticsearch environment
 ```bash
 . ./elk_env
 ```
 
-### 3. Start version 5.6
+### 2.3 Start version 5.6
 ```bash
 docker-compose up -d
 ```
 
 ---
 
-## UPGRADE ELASTICSEARCH FROM VERSION 5.6 => 6.8.0
+## 3. UPGRADE ELASTICSEARCH FROM VERSION 5.6 => 6.8.0
 
-### 1. Backup data
+### 3.1 Backup data
 ```bash
 cp -r -p /local/elasticsearch/elasticsearch1/data /local/elasticsearch/elasticsearch1/data5_6.bak
 cp -r -p /local/elasticsearch/elasticsearch2/data /local/elasticsearch/elasticsearch2/data5_6.bak
 ```
 
-### 2. Stop version 5.6
+### 3.2 Stop version 5.6
 ```bash
 docker-compose down
 ```
 
-### 3. Declare elasticsearch environment
+### 3.3 Declare elasticsearch environment
 ```bash
 sed -i 's/5.6/6.8.0/' elk_env
 . ./elk_env
 ```
 
-### 4. Patch Permission
+### 3.4 Patch Permission
 ```bash
 chmod -R 777 /local/elasticsearch/elasticsearch1/data
 chmod 777 /local/elasticsearch/elasticsearch1/logs
@@ -69,22 +95,22 @@ chmod -R 777 /local/elasticsearch/elasticsearch2/data
 chmod 777 /local/elasticsearch/elasticsearch2/logs
 ```
 
-### 5. Start version 6.8.0
+### 3.5 Start version 6.8.0
 ```bash
 docker-compose up -d
 ```
 
 ---
 
-## UPGRADE ELASTICSEARCH FROM VERSION 6.8.0 => 7.3.1
+## 4. UPGRADE ELASTICSEARCH FROM VERSION 6.8.0 => 7.3.1
 
-### 1. Backup data
+### 4.1 Backup data
 ```bash
 cp -r -p /local/elasticsearch/elasticsearch1/data /local/elasticsearch/elasticsearch1/data6_8.bak
 cp -r -p /local/elasticsearch/elasticsearch2/data /local/elasticsearch/elasticsearch2/data6_8.bak
 ```
 
-### 2. Kibana Reindex
+### 4.2 Kibana Reindex
 ```bash
 # Set .kibana index to read-only
 
@@ -398,7 +424,7 @@ curl -X POST "localhost:9200/_aliases?pretty" -H 'Content-Type: application/json
 '
 ```
 
-## 3. Reindex
+## 4.3 Reindex
 
 ```bash
 # reindex
@@ -431,18 +457,18 @@ do
 done
 ```
 
-### 4. Stop version 6.8.0
+### 4.4 Stop version 6.8.0
 ```bash
 docker-compose down
 ```
 
-### 5. Declare elasticsearch environment
+### 4.5 Declare elasticsearch environment
 ```bash
 sed -i 's/6.8.0/7.3.1/' elk_env
 . ./elk_env
 ```
 
-### 6. Patch elasticsearch.yml
+### 4.6 Patch elasticsearch.yml
 ```bash
 rm -f /local/elasticsearch/elasticsearch1/config/elasticsearch.yml
 cp -p /local/elasticsearch/elasticsearch1/config/elasticsearch.yml.7 elasticsearch.yml
@@ -451,16 +477,16 @@ rm -f /local/elasticsearch/elasticsearch2/config/elasticsearch.yml
 cp -p /local/elasticsearch/elasticsearch2/config/elasticsearch.yml.7 elasticsearch.yml
 ```
 
-### 7. Start version 7.3.1
+### 4.7 Start version 7.3.1
 ```bash
 docker-compose up -d
 ```
 
 ---
 
-## Kibana
+## 5. Kibana
 
-### 1. Patch kibana.yml
+### 5.1 Patch kibana.yml
 ```bash
 cp -p /local/elasticsearch/kibana/kibana.yml /local/elasticsearch/kibana/kibana.yml.bak
 
@@ -468,9 +494,18 @@ rm -f /local/elasticsearch/kibana/kibana.yml
 cp -p kibana.yml.7 /local/elasticsearch/kibana/kibana.yml
 ```
 
-### 2. Start Kibana 7.3.1
+### 5.2 Start Kibana 7.3.1
 ```bash
 docker-compose -f docker-compose-kib-7_3.yml up -d
+```
+
+## 6. Enable cronjob at APP VM
+```bash
+# DEV
+mv /var/spool/cron/crontabs/devadm.disabled /var/spool/cron/crontabs/devadm
+
+# SIT & UAT
+mv /var/spool/cron/crontabs/dockadm.disabled /var/spool/cron/crontabs/dockadm
 ```
 
 
