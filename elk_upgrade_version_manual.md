@@ -20,6 +20,7 @@
 - elk_env //version control setting
 
 ### 1.2 Preparation
+> Host: App, DB
 ```bash
 cd /local/elasticsearch
 tar xzvf elk_versioning_packages.tar.gz
@@ -33,6 +34,7 @@ cp -p elasticsearch_config/elasticsearch2/* /local/elasticsearch/elasticsearch2/
 ```
 
 ### 1.3 Disable ingest node cronjob at APP VM
+> Host: App
 ```bash
 # DEV
 mv /var/spool/cron/crontabs/devadm /var/spool/cron/crontabs/devadm.disabled
@@ -42,13 +44,14 @@ mv /var/spool/cron/crontabs/dockadm /var/spool/cron/crontabs/dockadm.disabled
 ```
 
 ### 1.4 Stop ELK Services (Elasticsearch 5.5.2, Kibana 5.5.2)
+> Host: App, DB
 ```bash
 docker-compose-cluster down
 ```
 ---
 
 ## 2. UPGRADE ELASTICSEARCH FROM VERSION 5.5.2 => 5.6
-
+> Host: DB
 ### 2.1 Backup data
 ```bash
 cp -r -p /local/elasticsearch/elasticsearch1/data /local/elasticsearch/elasticsearch1/data5_5.bak
@@ -68,7 +71,7 @@ docker-compose up -d
 ---
 
 ## 3. UPGRADE ELASTICSEARCH FROM VERSION 5.6 => 6.8.0
-
+> Host: DB
 ### 3.1 Backup data
 ```bash
 cp -r -p /local/elasticsearch/elasticsearch1/data /local/elasticsearch/elasticsearch1/data5_6.bak
@@ -103,7 +106,7 @@ docker-compose up -d
 ---
 
 ## 4. UPGRADE ELASTICSEARCH FROM VERSION 6.8.0 => 7.3.1
-
+> Host: DB
 ### 4.1 Backup data
 ```bash
 cp -r -p /local/elasticsearch/elasticsearch1/data /local/elasticsearch/elasticsearch1/data6_8.bak
@@ -485,7 +488,7 @@ docker-compose up -d
 ---
 
 ## 5. Kibana
-
+> Host: App
 ### 5.1 Patch kibana.yml
 ```bash
 cp -p /local/elasticsearch/kibana/kibana.yml /local/elasticsearch/kibana/kibana.yml.bak
@@ -500,6 +503,7 @@ docker-compose -f docker-compose-kib-7_3.yml up -d
 ```
 
 ## 6. Enable cronjob at APP VM
+> Host: App
 ```bash
 # DEV
 mv /var/spool/cron/crontabs/devadm.disabled /var/spool/cron/crontabs/devadm
